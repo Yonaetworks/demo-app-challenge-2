@@ -1,0 +1,36 @@
+image: yonaetworks/devops-tools-node:latest
+
+stages:
+  - dependencies-install
+  - build
+  - run
+
+dependencies-job:
+  stage: dependencies-install
+  script:
+    - npm install
+  artifacts:
+    paths:
+      - node_modules
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+build-job:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - build
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+run-job:
+  stage: run
+  script:
+    - curl -s https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/load-secure-files/-/raw/main/installer | bash
+    - ansible-playbook -u yhernandez -i 'demo-app-yhernandez.westus3.cloudapp.azure.com,' ping.yml --private-key .secure_files/vm-demo-key
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
